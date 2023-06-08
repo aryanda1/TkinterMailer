@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 # File path to store recent recipients
-RECIPIENTS_FILE = "email-python/recent_recipients.txt"
+RECIPIENTS_FILE = "recent_recipients.txt"
 
 # Load recent recipients from file
 def load_recent_recipients():
