@@ -1,6 +1,6 @@
 import smtplib
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox, filedialog, ttk
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -35,16 +35,39 @@ def clear_text_input():
     e1.delete(0, tk.END)
     subj.delete(0, tk.END)
     attachment_label.config(text="No file selected")
+    file_combobox["values"] = []
+    file_combobox.set("")
 
 def browse_file():
     file_paths = filedialog.askopenfilenames(filetypes=[("All Files", "*.*")])
-    if len(file_paths) == 0:
+    if len(file_paths) == 0 and attachment_label["text"] == "No file selected":
         attachment_label.config(text="No file selected")
+        file_combobox["values"] = []
     else:
         attachment_path = attachment_label["text"]
         if attachment_path!='No file selected':
-            file_paths = file_paths + tuple(attachment_path.split(", "))
+            file_paths = [file_path for file_path in file_paths if file_path not in attachment_path.split(", ")]
+            file_paths = (attachment_path.split(", ")) + file_paths
+        file_combobox["values"] = [file_name.split('/')[-1] for file_name in file_paths]
         attachment_label.config(text=", ".join(file_paths))
+        file_combobox.current(len(file_paths)-1)
+
+def remove_file():
+    selected_item = file_combobox.get()
+    if len(selected_item)!=0:
+        attachment_path = attachment_label["text"]
+        attachment_path = attachment_path.split(", ")
+        attachment_path = [path for path in attachment_path if path.split('/')[-1] != selected_item]
+        attachment_label.config(text=", ".join(attachment_path))
+        file_combobox["values"] = [file_name.split('/')[-1] for file_name in attachment_path]
+        if(len(attachment_path)==0):
+            file_combobox.set("")
+            attachment_label.config(text="No file selected")
+        else:
+            file_combobox.current(0)
+    else:
+        messagebox.showerror("Error", "No file selected")
+
 
 # Store recent email recipients
 recent_recipients = load_recent_recipients()
@@ -109,10 +132,10 @@ font1 = ("Arial", 24, "bold")
 font2 = ("Arial", 12)
 # Create an autocomplete entry for recipient email
 recipient_label = tk.Label(window, text="Recipient Email:")
-recipient_label.grid(row = 0,column=0)
+recipient_label.grid(row = 0,column=0,sticky='w',padx=(25,0))
 e1_str = tk.StringVar()
 e1 = tk.Entry(window, textvariable=e1_str, font=font1)
-e1.grid(row=0,column=1,sticky="nsew",padx=50)
+e1.grid(row=0,column=1,sticky="nsew",padx=(0,20))
 
 
 
@@ -182,7 +205,7 @@ def visible_listbox():
 
 l1_height = 0  # Set the initial height based on the length of my_list
 l1 = tk.Listbox(window, height=l1_height, font=font2, relief='groove', bg='SystemButtonFace', highlightcolor='SystemButtonFace')
-l1.grid(row=2, column=1, sticky="nsew",padx=50)
+l1.grid(row=2, column=1, sticky="nsew",padx=(0,20))
 scrollbar = tk.Scrollbar(window, command=l1.yview)
 scrollbar.grid(row=2, column=2, sticky="ns")
 l1.configure(yscrollcommand=scrollbar.set)
@@ -197,25 +220,41 @@ subject = tk.Label(window, text="Subject:",anchor='w')
 subject.grid(row = 3,column=0,sticky='w',padx=(25,0))
 subj_str = tk.StringVar()
 subj = tk.Entry(window, textvariable=subj_str, font=font1)
-subj.grid(row=3,column=1,sticky="nsew",padx=50,pady=(10,0))
+subj.grid(row=3,column=1,sticky="nsew",padx=(0,20),pady=(10,0))
 
 # # Create a text input field for email content
 text_label = tk.Label(window, text="Email Content:")
-text_label.grid(row=4,column=0,pady=(10,0))
+text_label.grid(row=4,column=0,pady=(10,0),sticky='w',padx=(25,0))
 text_input = tk.Text(window,height=20)
 text_input.grid(row=5,column=0, columnspan=2)
 
-# # Create a button to send the email
-send_button = tk.Button(window, text="Send Email", command=send_email,bd='5',anchor='center')
-send_button.grid(row=6,column=0,pady=10,columnspan=2)
 
 # Create a label to display the attachment file path
 attachment_label = tk.Label(window, text="No file selected", anchor="w")
-attachment_label.grid(row=7, column=0, columnspan=2, sticky="w", padx=(25, 0))
+# attachment_label.grid(row=7, column=0, columnspan=2, sticky="w", padx=(25, 0))
+style = ttk.Style()
+style.configure("Custom.TButton", padding=(0,0,0,0), font=('Arial', 16),anchor='center')
+style.map("Custom.TButton",
+          foreground=[('pressed', 'black'), ('active', 'black'), ('!disabled', 'black')],
+          background=[('pressed', '!disabled', 'white'), ('active', 'white')])
 
-# Create a button to browse and select a file
-browse_button = tk.Button(window, text="Browse", command=browse_file)
-browse_button.grid(row=7, column=1, pady=(10, 0))
+
+# # Create a button to browse and select a file
+file_combobox = ttk.Combobox(window, state="readonly", font=font2, width=20)
+file_combobox.grid(row=6, column=0, sticky='w',padx=(25,0),pady=(10,0))
+browse_button = ttk.Button(window, text="📎", command=browse_file,style='Custom.TButton',width=3)
+browse_button.grid(row=6, column=1, pady=(10, 0),sticky='w',padx=(0,0))
+browse_button.configure(compound='center')
+dlt_button = ttk.Button(window, text="❌", command=remove_file,style='Custom.TButton',width=3)
+dlt_button.grid(row=6, column=1, pady=(10, 0),sticky='w',padx=(50,0))
+dlt_button.configure(compound='center')
+
+# remove_button = tk.Button(window, text="Remove Attachments", command=remove_attachments)
+# remove_button.grid(row=8, column=1, pady=(10, 0))
+
+# # Create a button to send the email
+send_button = tk.Button(window, text="Send Email", command=send_email,bd='5',anchor='e')
+send_button.grid(row=6,column=1,pady=(10,0),columnspan=2,sticky='e',padx=10)
 
 hide_listbox()
 
