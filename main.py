@@ -1,6 +1,9 @@
 import smtplib
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 import re
 from dotenv import load_dotenv
 import os
@@ -31,6 +34,17 @@ def clear_text_input():
     text_input.delete('1.0', tk.END)
     e1.delete(0, tk.END)
     subj.delete(0, tk.END)
+    attachment_label.config(text="No file selected")
+
+def browse_file():
+    file_paths = filedialog.askopenfilenames(filetypes=[("All Files", "*.*")])
+    if len(file_paths) == 0:
+        attachment_label.config(text="No file selected")
+    else:
+        attachment_path = attachment_label["text"]
+        if attachment_path!='No file selected':
+            file_paths = file_paths + tuple(attachment_path.split(", "))
+        attachment_label.config(text=", ".join(file_paths))
 
 # Store recent email recipients
 recent_recipients = load_recent_recipients()
@@ -48,13 +62,36 @@ def send_email():
             server.starttls()
             server.login(email, password)
 
-            server.sendmail('', recipient, f'Subject: {subject}\n\n{content}')
+            message = MIMEMultipart()
+            message["From"] = email
+            message["To"] = recipient
+            message["Subject"] = subject
+
+            # Attach the email content
+            message.attach(MIMEText(content, "plain"))
+
+            # Attach the file
+            attachment_path = attachment_label["text"]
+            if attachment_path!='No file selected':
+                for path in attachment_path.split(", "):
+                    with open(path, "rb") as attachment_file:
+                        attachment = MIMEApplication(attachment_file.read())
+
+                    attachment.add_header(
+                        "Content-Disposition",
+                        "attachment",
+                        filename=os.path.basename(path)
+                    )
+                    message.attach(attachment)
+
+            # Send the email
+            server.send_message(message)
             messagebox.showinfo("Email Status", "Email sent successfully!")
 
             add_item(recipient)
 
             clear_text_input()
-            
+
     except Exception as e:
         messagebox.showerror("Email Status", f"Error sending email: {str(e)}")
 
@@ -171,6 +208,14 @@ text_input.grid(row=5,column=0, columnspan=2)
 # # Create a button to send the email
 send_button = tk.Button(window, text="Send Email", command=send_email,bd='5',anchor='center')
 send_button.grid(row=6,column=0,pady=10,columnspan=2)
+
+# Create a label to display the attachment file path
+attachment_label = tk.Label(window, text="No file selected", anchor="w")
+attachment_label.grid(row=7, column=0, columnspan=2, sticky="w", padx=(25, 0))
+
+# Create a button to browse and select a file
+browse_button = tk.Button(window, text="Browse", command=browse_file)
+browse_button.grid(row=7, column=1, pady=(10, 0))
 
 hide_listbox()
 
