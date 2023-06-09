@@ -27,12 +27,18 @@ def add_item(recipient):
         # entry_new_item.delete(0, tk.END)
         # update_listbox_height()
 
+def clear_text_input():
+    text_input.delete('1.0', tk.END)
+    e1.delete(0, tk.END)
+    subj.delete(0, tk.END)
+
 # Store recent email recipients
 recent_recipients = load_recent_recipients()
 email = os.environ.get('email')
 password = os.environ.get('pass')
 def send_email():
     recipient = e1.get()
+    subject = subj.get()
     content = text_input.get("1.0", tk.END).strip()
 
     # Connect to the SMTP server and send the email
@@ -42,18 +48,13 @@ def send_email():
             server.starttls()
             server.login(email, password)
 
-            server.sendmail('', recipient, f'Subject: Code Example\n\n{content}')
+            server.sendmail('', recipient, f'Subject: {subject}\n\n{content}')
             messagebox.showinfo("Email Status", "Email sent successfully!")
 
             add_item(recipient)
 
-
-            # Refresh the listbox with similar email recipients
-            # refresh_listbox()
-            hide_listbox()
-            text_input.delete('1.0', tk.END)
-            # Clear the recipient input field
-            e1.delete(0, tk.END)
+            clear_text_input()
+            
     except Exception as e:
         messagebox.showerror("Email Status", f"Error sending email: {str(e)}")
 
@@ -71,10 +72,12 @@ font1 = ("Arial", 24, "bold")
 font2 = ("Arial", 12)
 # Create an autocomplete entry for recipient email
 recipient_label = tk.Label(window, text="Recipient Email:")
-recipient_label.grid(row = 0,column=1)
+recipient_label.grid(row = 0,column=0)
 e1_str = tk.StringVar()
 e1 = tk.Entry(window, textvariable=e1_str, font=font1)
-e1.grid(row=1,column=1,sticky="nsew",padx=100)
+e1.grid(row=0,column=1,sticky="nsew",padx=50)
+
+
 
 def my_down(event):
     l1.focus()
@@ -142,9 +145,9 @@ def visible_listbox():
 
 l1_height = 0  # Set the initial height based on the length of my_list
 l1 = tk.Listbox(window, height=l1_height, font=font2, relief='groove', bg='SystemButtonFace', highlightcolor='SystemButtonFace')
-l1.grid(row=2, column=1, sticky="nsew",padx=100)
+l1.grid(row=2, column=1, sticky="nsew",padx=50)
 scrollbar = tk.Scrollbar(window, command=l1.yview)
-scrollbar.grid(row=2, column=3, sticky="ns")
+scrollbar.grid(row=2, column=2, sticky="ns")
 l1.configure(yscrollcommand=scrollbar.set)
 
 e1.bind('<Down>', my_down)
@@ -153,16 +156,21 @@ l1.bind('<Up>', my_up)
 l1.bind('<ButtonRelease-1>', my_upd)
 e1_str.trace('w', get_data)
 
+subject = tk.Label(window, text="Subject:",anchor='w')
+subject.grid(row = 3,column=0,sticky='w',padx=(25,0))
+subj_str = tk.StringVar()
+subj = tk.Entry(window, textvariable=subj_str, font=font1)
+subj.grid(row=3,column=1,sticky="nsew",padx=50,pady=(10,0))
 
 # # Create a text input field for email content
 text_label = tk.Label(window, text="Email Content:")
-text_label.grid(row=3,column=1,pady=(10,0))
+text_label.grid(row=4,column=0,pady=(10,0))
 text_input = tk.Text(window,height=20)
-text_input.grid(row=4,column=1)
+text_input.grid(row=5,column=0, columnspan=2)
 
 # # Create a button to send the email
-send_button = tk.Button(window, text="Send Email", command=send_email)
-send_button.grid(row=5,column=1,pady=10)
+send_button = tk.Button(window, text="Send Email", command=send_email,bd='5',anchor='center')
+send_button.grid(row=6,column=0,pady=10,columnspan=2)
 
 hide_listbox()
 
