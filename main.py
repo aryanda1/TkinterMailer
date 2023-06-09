@@ -68,6 +68,9 @@ def remove_file():
     else:
         messagebox.showerror("Error", "No file selected")
 
+def is_valid_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email) is not None
 
 # Store recent email recipients
 recent_recipients = load_recent_recipients()
@@ -75,6 +78,9 @@ email = os.environ.get('email')
 password = os.environ.get('pass')
 def send_email():
     recipient = e1.get()
+    if not is_valid_email(recipient):
+        messagebox.showerror("Error", "Please enter a valid email address!")
+        return
     subject = subj.get()
     content = text_input.get("1.0", tk.END).strip()
 
